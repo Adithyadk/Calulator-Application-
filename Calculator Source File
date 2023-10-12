@@ -1,0 +1,200 @@
+//Calculator Application //Adithya //24-09-2023
+
+// Including Necessary Libraries
+using namespace System;
+using namespace System::Drawing;
+using namespace System::Windows::Forms;
+
+// Defining the CalculatorForm Class
+public ref class CalculatorForm : public Form
+{
+private:
+    TextBox^ inputBox;
+    Label^ resultLabel;
+    ListBox^ resultList;
+    Button^ calculateButton;
+    Button^ clearButton;
+    TextBox^ resultBox; // Add a text box for displaying the result
+    Color white = Color::FromArgb(255, 255, 255);
+    Color lightBlue = Color::FromArgb(173, 216, 230); // Light Blue color
+    Color whiteColor = Color::White;
+    Color blackColor = Color::Black;
+    TabControl^ tabs;
+
+public:
+    CalculatorForm()
+    {
+        Text = "Calculator";
+        Size = Drawing::Size(400, 500); // Adjust the form size.
+        BackColor = white; // Set the background color to white.
+
+        tabs = gcnew TabControl();
+        tabs->Size = Drawing::Size(500, 450);
+
+        // Input Tab
+        TabPage^ inputTab = gcnew TabPage();
+        inputTab->Text = "Calculator";
+        tabs->TabPages->Add(inputTab);
+
+        inputBox = gcnew TextBox();
+        inputBox->Location = Drawing::Point(20, 20);
+        inputBox->Size = Drawing::Size(250, 30);
+        inputBox->BackColor = whiteColor; // Set the input box background color to white.
+        inputBox->ForeColor = blackColor; // Set the input box text color to black.
+        inputTab->Controls->Add(inputBox);
+
+        // Add buttons for numbers 0-9 and set the button color to light blue.
+        for (int i = 1; i <= 9; i++) {
+            Button^ numberButton = gcnew Button();
+            numberButton->Text = i.ToString();
+            numberButton->Location = Drawing::Point(20 + ((i - 1) % 3) * 80, 80 + ((i - 1) / 3) * 60);
+            numberButton->Size = Drawing::Size(70, 50);
+            numberButton->Click += gcnew EventHandler(this, &CalculatorForm::NumberButton_Click);
+            numberButton->BackColor = lightBlue;
+            inputTab->Controls->Add(numberButton);
+        }
+
+        // Add '0' button.
+        Button^ numberButton0 = gcnew Button();
+        numberButton0->Text = "0";
+        numberButton0->Location = Drawing::Point(20 + 1 * 80, 80 + 3 * 60);
+        numberButton0->Size = Drawing::Size(70, 50);
+        numberButton0->Click += gcnew EventHandler(this, &CalculatorForm::NumberButton_Click);
+        numberButton0->BackColor = lightBlue;
+        inputTab->Controls->Add(numberButton0);
+
+        // Add buttons for basic operations and set the button color to light blue.
+        array<String^>^ operations = { "+", "-", "*", "/", "%" };
+        for (int i = 0; i < operations->Length; i++) {
+            Button^ operationButton = gcnew Button();
+            operationButton->Text = operations[i];
+            operationButton->Location = Drawing::Point(20 + 3 * 80, 80 + i * 60);
+            operationButton->Size = Drawing::Size(70, 50);
+            operationButton->Click += gcnew EventHandler(this, &CalculatorForm::OperationButton_Click);
+            operationButton->BackColor = lightBlue;
+            inputTab->Controls->Add(operationButton);
+        }
+
+        // Add the '=' button to the input tab.
+        calculateButton = gcnew Button();
+        calculateButton->Text = "=";
+        calculateButton->Location = Drawing::Point(20 + 2 * 80, 80 + 3 * 60);
+        calculateButton->Size = Drawing::Size(70, 50);
+        calculateButton->Click += gcnew EventHandler(this, &CalculatorForm::CalculateResult);
+        calculateButton->BackColor = lightBlue;
+        inputTab->Controls->Add(calculateButton);
+
+        clearButton = gcnew Button();
+        clearButton->Text = "C";
+        clearButton->Location = Drawing::Point(20 + 3 * 80, 80 + 3 * 60);
+        clearButton->Size = Drawing::Size(70, 50);
+        clearButton->Click += gcnew EventHandler(this, &CalculatorForm::ClearButton_Click);
+        clearButton->BackColor = lightBlue;
+        inputTab->Controls->Add(clearButton);
+
+        // Add a text box for displaying the result
+        resultBox = gcnew TextBox();
+        resultBox->Location = Drawing::Point(20, 400);
+        resultBox->Size = Drawing::Size(250, 30);
+        resultBox->ReadOnly = true; // Make it read-only
+        resultBox->BackColor = whiteColor;
+        resultBox->ForeColor = blackColor;
+        inputTab->Controls->Add(resultBox);
+
+        // Calculate Tab
+        TabPage^ calculateTab = gcnew TabPage();
+        calculateTab->Text = "History :";
+        tabs->TabPages->Add(calculateTab);
+
+        resultList = gcnew ListBox();
+        resultList->Location = Drawing::Point(20, 60);
+        resultList->Size = Drawing::Size(350, 250);
+        resultList->BackColor = lightBlue; // Set the result list background color.
+        resultList->ForeColor = whiteColor; // Set the result list text color to white.
+        resultList->Font = gcnew System::Drawing::Font("Arial", 12);
+        calculateTab->Controls->Add(resultList);
+
+        inputBox->KeyPress += gcnew KeyPressEventHandler(this, &CalculatorForm::InputBox_KeyPress);
+
+        // Add the TabControl to the form.
+        Controls->Add(tabs);
+    }
+
+    double EvaluateExpression(String^ expression)
+    {
+        double result = 0.0;
+        try
+        {
+            System::Data::DataTable table;
+            result = System::Convert::ToDouble(table.Compute(expression, nullptr));
+        }
+        catch (Exception^)
+        {
+            result = Double::NaN; // Error
+        }
+        return result;
+    }
+
+    void NumberButton_Click(Object^ sender, EventArgs^ e)
+    {
+        Button^ numberButton = dynamic_cast<Button^>(sender);
+        String^ numberText = numberButton->Text;
+        inputBox->Text += numberText;
+    }
+
+    void OperationButton_Click(Object^ sender, EventArgs^ e)
+    {
+        Button^ operationButton = dynamic_cast<Button^>(sender);
+        String^ operationText = operationButton->Text;
+        inputBox->Text += operationText;
+    }
+
+    void ClearButton_Click(Object^ sender, EventArgs^ e)
+    {
+        inputBox->Text = "";
+        resultBox->Text = ""; // Clear the result text box
+    }
+
+    void CalculateResult(Object^ sender, EventArgs^ e)
+    {
+        Calculate();
+    }
+
+    void InputBox_KeyPress(Object^ sender, KeyPressEventArgs^ e)
+    {
+        if (e->KeyChar == 13) // Enter key
+        {
+            Calculate();
+            e->Handled = true; // Prevent the Enter key from being typed in the input box.
+        }
+    }
+
+    void Calculate()
+    {
+        String^ expression = inputBox->Text;
+        double result = EvaluateExpression(expression);
+
+        if (Double::IsNaN(result))
+        {
+            resultBox->Text = "Error";
+        }
+        else
+        {
+            resultBox->Text = "Result: " + expression + " = " + result.ToString();
+            resultList->Items->Insert(0, "Result: " + expression + " = " + result.ToString());
+            inputBox->Text = "";
+        }
+    }
+};
+[STAThread]
+int main(array<String^>^ args)
+{
+    Application::EnableVisualStyles();
+    Application::SetCompatibleTextRenderingDefault(false);
+
+    CalculatorForm^ form = gcnew CalculatorForm();
+
+    Application::Run(form);
+
+    return 0;
+}
